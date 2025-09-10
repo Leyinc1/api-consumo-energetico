@@ -1,5 +1,5 @@
 {
-  "name": "api-consumo-energetico",
+  "name": "api-consumo-energetico-2",
   "version": "1.0.0",
   "description": "API para simular consumo energetico para SAP Build Apps",
   "main": "server.js",
@@ -8,6 +8,10 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
