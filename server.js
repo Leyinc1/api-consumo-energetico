@@ -22,7 +22,7 @@ app.get("/consumo", (request, response) => {
 });
 
 // --- 3. LÓGICA DE ACTUALIZACIÓN EN SEGUNDO PLANO ---
-// Esta función se ejecutará cada 10 segundos para actualizar los valores.
+// Esta función se ejecutará cada 2 segundos para actualizar los valores.
 setInterval(() => {
   console.log("Actualizando valores de consumo..."); // Esto aparecerá en los logs de Render
 
@@ -44,7 +44,7 @@ setInterval(() => {
       timestamp: new Date().toISOString() // Actualiza la fecha y hora
     };
   });
-}, 10000); // 10000 milisegundos = 10 segundos
+}, 2000); // 2000 milisegundos = 2 segundos
 
 
 // --- Ruta para la página principal (sin cambios) ---
@@ -57,3 +57,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
+
