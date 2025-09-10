@@ -1,58 +1,48 @@
 const express = require("express");
 const cors = require("cors");
-const crypto = require('crypto'); // Usamos el módulo nativo de Node.js
 
 const app = express();
 app.use(cors());
 
-// --- 1. ESTADO INICIAL DEL SENSOR ---
-// Ahora solo tenemos un dispositivo para simular un único sensor.
-let dispositivos = [
-    { id: "SENSOR-01", value: 1 }
-];
+// --- ESTADO INICIAL DEL SENSOR (AHORA ES UN OBJETO) ---
+// Se cambió de una lista a un objeto simple para mayor claridad.
+let dispositivo = {
+    id: "SENSOR-01",
+    value: 0
+};
 
-// --- 2. LÓGICA DE SIMULACIÓN SIMPLE ---
-// Esta función se ejecutará cada segundo para actualizar el estado del sensor.
+// --- LÓGICA DE SIMULACIÓN SIMPLE ---
+// Actualiza directamente las propiedades del objeto 'dispositivo'.
 setInterval(() => {
-    // Simulación para un único sensor.
-    // Tiene un 98% de probabilidad de estar encendido (1) y un 2% de apagarse.
-    // Esto simula una conexión estable con fallos o reinicios ocasionales.
     const nuevoValor = Math.random() < 0.90 ? 1 : 0;
     
-    // Actualizamos el único dispositivo en el array
-    if (dispositivos.length > 0) {
-        dispositivos[0].value = nuevoValor;
-    }
+    dispositivo.value = nuevoValor;
 
     console.log("Estado del sensor actualizado:", new Date().toLocaleTimeString(), `-> Valor: ${nuevoValor}`);
 
-}, 1000); // Se ejecuta cada 1000 ms = 1 segundo
+}, 1000);
 
-// --- 3. RUTA DE LA API ---
-// Devuelve el estado del sensor con el formato solicitado.
+// --- RUTA DE LA API MODIFICADA ---
+// Ahora crea la respuesta directamente desde el objeto 'dispositivo'.
 app.get("/consumo", (request, response) => {
-    const ahora = new Date().toISOString();
+    
+    // Se construye el objeto de respuesta directamente.
+    const respuesta = {
+        "codigo": dispositivo.id,
+        "estado": dispositivo.value
+    };
 
-    // Mapeamos el estado interno al formato de respuesta deseado
-    const respuestaFormateada = dispositivos.map(device => ({
-        "LogID": crypto.randomUUID(), // Generamos un ID único para cada log con el módulo crypto
-        "device": {
-             "DeviceID": device.id // Asociamos al ID del dispositivo
-        },
-        "timestamp": ahora,
-        "value": device.value
-    }));
-
-    response.json(respuestaFormateada);
+    // Se envía la respuesta. No es necesaria ninguna comprobación.
+    response.json(respuesta);
 });
 
 
-// --- Ruta para la página principal (sin cambios) ---
+// --- Ruta para la página principal ---
 app.get("/", (request, response) => {
     response.send("¡API de simulación de sensor funcionando! Accede a /consumo para ver los datos.");
 });
 
-// --- Iniciamos el Servidor (sin cambios) ---
+// --- Iniciamos el Servidor ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
