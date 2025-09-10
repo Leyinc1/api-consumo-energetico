@@ -17,7 +17,7 @@ setInterval(() => {
     // Simulación para un único sensor.
     // Tiene un 98% de probabilidad de estar encendido (1) y un 2% de apagarse.
     // Esto simula una conexión estable con fallos o reinicios ocasionales.
-    const nuevoValor = Math.random() < 0.98 ? 1 : 0;
+    const nuevoValor = Math.random() < 0.90 ? 1 : 0;
     
     // Actualizamos el único dispositivo en el array
     if (dispositivos.length > 0) {
