@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { v4: uuidv4 } = require('uuid'); // Para generar IDs únicos
+const crypto = require('crypto'); // Usamos el módulo nativo de Node.js
 
 const app = express();
 app.use(cors());
@@ -86,7 +86,7 @@ app.get("/consumo", (request, response) => {
 
     // Mapeamos el estado interno al formato de respuesta deseado
     const respuestaFormateada = dispositivos.map(device => ({
-        "LogID": uuidv4(), // Generamos un ID único para cada log
+        "LogID": crypto.randomUUID(), // Generamos un ID único para cada log con el módulo crypto
         "device": {
              "DeviceID": device.id // Asociamos al ID del dispositivo
         },
@@ -108,3 +108,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
+
