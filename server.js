@@ -1,60 +1,110 @@
 const express = require("express");
 const cors = require("cors");
+const { v4: uuidv4 } = require('uuid'); // Para generar IDs únicos
 
 const app = express();
 app.use(cors());
 
-// --- 1. ESTADO INICIAL Y PERSISTENTE DE LOS ELECTRODOMÉSTICOS ---
-// Esta variable vive fuera de las peticiones. Guarda el estado actual.
-// Se ha eliminado el campo "nombre".
-let estadoActualElectrodomesticos = [
-  { id: "NEV-001", consumo_watts: 160, timestamp: new Date().toISOString() },
-  { id: "TV-LIV-001", consumo_watts: 85, timestamp: new Date().toISOString() },
-  { id: "MICRO-01", consumo_watts: 0, timestamp: new Date().toISOString() }, // Empieza apagado
-  { id: "LAP-WRK-01", consumo_watts: 65, timestamp: new Date().toISOString() },
-  { id: "AC-DORM-01", consumo_watts: 1500, timestamp: new Date().toISOString() }
+// --- 1. ESTADO INICIAL DE LOS DISPOSITIVOS ---
+// Cada dispositivo ahora tiene un 'id' y un 'estado' (0 o 1).
+// También añadimos una lógica de simulación personalizada para cada uno.
+let dispositivos = [
+    { id: "NEV-001", value: 1 },    // Nevera
+    { id: "TV-LIV-001", value: 0 }, // Televisor
+    { id: "MICRO-01", value: 0 },   // Microondas
+    { id: "LAP-WRK-01", value: 0 }, // Laptop
+    { id: "AC-DORM-01", value: 0 }  // Aire Acondicionado
 ];
 
-// --- 2. LA RUTA DE LA API AHORA ES MÁS SIMPLE ---
-// Simplemente devuelve el estado actual que tenemos guardado en la variable.
-app.get("/consumo", (request, response) => {
-  response.json(estadoActualElectrodomesticos);
-});
-
-// --- 3. LÓGICA DE ACTUALIZACIÓN EN SEGUNDO PLANO ---
-// Esta función se ejecutará cada 2 segundos para actualizar los valores.
+// --- 2. LÓGICA DE SIMULACIÓN AVANZADA ---
+// Esta función se ejecutará cada segundo para dar una sensación más realista.
 setInterval(() => {
-  console.log("Actualizando valores de consumo..."); // Esto aparecerá en los logs de Render
+    const ahora = new Date();
+    const hora = ahora.getHours(); // Hora del día (0-23)
+    const dia = ahora.getDay();   // Día de la semana (0=Domingo, 6=Sábado)
 
-  estadoActualElectrodomesticos = estadoActualElectrodomesticos.map(item => {
-    // No cambiamos el consumo de aparatos que están apagados (consumo 0)
-    if (item.consumo_watts === 0) {
-      return item;
-    }
+    dispositivos = dispositivos.map(device => {
+        let nuevoValor = device.value;
 
-    // Genera un número aleatorio entre -5 y +5
-    const fluctuacion = (Math.random() * 10) - 5;
-    
-    // Calcula el nuevo consumo, asegurándose de que no sea menor que cero
-    const nuevoConsumo = Math.max(0, item.consumo_watts + fluctuacion);
+        switch (device.id) {
+            // La nevera tiene un 95% de probabilidad de estar encendida (compresor funcionando)
+            case "NEV-001":
+                nuevoValor = Math.random() < 0.95 ? 1 : 0;
+                break;
 
-    return {
-      ...item, // Mantiene las propiedades existentes (como el id)
-      consumo_watts: Math.round(nuevoConsumo), // Actualiza el consumo con el nuevo valor redondeado
-      timestamp: new Date().toISOString() // Actualiza la fecha y hora
-    };
-  });
-}, 2000); // 2000 milisegundos = 2 segundos
+            // El televisor es más probable que se encienda entre las 6 PM y las 11 PM.
+            case "TV-LIV-001":
+                if (hora >= 18 && hora <= 23) {
+                    nuevoValor = Math.random() < 0.75 ? 1 : 0; // 75% de probabilidad en la noche
+                } else {
+                    nuevoValor = Math.random() < 0.05 ? 1 : 0; // 5% de probabilidad el resto del día
+                }
+                break;
+
+            // El microondas se enciende en ráfagas cortas e infrecuentes.
+            case "MICRO-01":
+                // Si está encendido, hay un 50% de probabilidad de que se apague.
+                if (device.value === 1) {
+                    nuevoValor = Math.random() < 0.5 ? 0 : 1;
+                } else {
+                    // Si está apagado, solo hay un 2% de probabilidad de que se encienda.
+                    nuevoValor = Math.random() < 0.02 ? 1 : 0;
+                }
+                break;
+
+            // La laptop es más probable que esté encendida en horario laboral (L-V, 9am-6pm).
+            case "LAP-WRK-01":
+                const esHorarioLaboral = dia >= 1 && dia <= 5 && hora >= 9 && hora < 18;
+                if (esHorarioLaboral) {
+                    nuevoValor = Math.random() < 0.90 ? 1 : 0; // 90% en horario laboral
+                } else {
+                    nuevoValor = Math.random() < 0.15 ? 1 : 0; // 15% fuera de horario
+                }
+                break;
+
+            // El AC es más probable que se encienda durante la noche.
+            case "AC-DORM-01":
+                if (hora >= 22 || hora <= 6) {
+                    nuevoValor = Math.random() < 0.70 ? 1 : 0; // 70% en la noche
+                } else {
+                    nuevoValor = Math.random() < 0.05 ? 1 : 0; // 5% durante el día
+                }
+                break;
+        }
+
+        return { ...device, value: nuevoValor };
+    });
+
+    console.log("Estado de dispositivos actualizado:", new Date().toLocaleTimeString());
+
+}, 1000); // Se ejecuta cada 1000 ms = 1 segundo
+
+// --- 3. RUTA DE LA API ---
+// Devuelve la lista de dispositivos con el formato solicitado.
+app.get("/consumo", (request, response) => {
+    const ahora = new Date().toISOString();
+
+    // Mapeamos el estado interno al formato de respuesta deseado
+    const respuestaFormateada = dispositivos.map(device => ({
+        "LogID": uuidv4(), // Generamos un ID único para cada log
+        "device": {
+             "DeviceID": device.id // Asociamos al ID del dispositivo
+        },
+        "timestamp": ahora,
+        "value": device.value
+    }));
+
+    response.json(respuestaFormateada);
+});
 
 
 // --- Ruta para la página principal (sin cambios) ---
 app.get("/", (request, response) => {
-  response.send("¡API de simulación de consumo energético funcionando! Accede a /consumo para ver los datos.");
+    response.send("¡API de simulación de encendido/apagado funcionando! Accede a /consumo para ver los datos.");
 });
 
 // --- Iniciamos el Servidor (sin cambios) ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
-
